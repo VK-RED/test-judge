@@ -9,12 +9,25 @@ services:
     logging:
       driver: none
     restart: always
-    # command: sh -c "sudo apt-get update; sudo apt-get install -y python3-pip; pip3 install pandas; /api/scripts/server"
-    command: sh -c "sudo apt-get update; sudo apt install -y python-pip; sudo apt-get install -y python3-pip; pip install pandas; pip3 install pandas; /api/scripts/server"
 
   worker:
     image: judge0/judge0:latest
-    command: ["./scripts/workers"]
+    command: >
+      sh -c "
+        sudo wget https://www.python.org/ftp/python/3.8.1/Python-3.8.1.tgz &&
+        sudo tar -xvf Python-3.8.1.tgz &&
+        cd Python-3.8.1 &&
+        ./configure --enable-optimizations &&
+        make -j $(nproc) &&
+        sudo make altinstall &&
+        sudo apt-get update &&
+        sudo apt-get install lsb-release &&
+        sudo curl -O https://bootstrap.pypa.io/get-pip.py &&
+        sudo python3.8 get-pip.py &&
+        python3.8 -m pip install pandas &&
+        cd .. &&
+        ./scripts/workers
+      "
     volumes:
       - ./judge0.conf:/judge0.conf:ro
     privileged: true
